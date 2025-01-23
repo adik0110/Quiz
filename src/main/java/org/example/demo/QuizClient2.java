@@ -7,6 +7,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -27,7 +30,8 @@ public class QuizClient2 extends Application {
     private Label timerLabel;
     private TextField answerField;
     private Label resultLabel;
-    private ProgressBar progressBar; // Прогресс-бар для отображения времени
+    private ProgressBar progressBar;
+    private ImageView characterView;
 
     @Override
     public void start(Stage primaryStage) {
@@ -50,9 +54,9 @@ public class QuizClient2 extends Application {
         timerLabel.setStyle("-fx-text-fill: #555555;");
 
         // Прогресс-бар
-        progressBar = new ProgressBar(0); // Инициализация прогресс-бара
-        progressBar.setPrefWidth(400); // Ширина прогресс-бара
-        progressBar.setStyle("-fx-accent: #4CAF50;"); // Цвет заполнения
+        progressBar = new ProgressBar(0);
+        progressBar.setPrefWidth(400);
+        progressBar.setStyle("-fx-accent: #4CAF50;");
 
         // Поле для ответа
         answerField = new TextField();
@@ -64,22 +68,30 @@ public class QuizClient2 extends Application {
         submitButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14; -fx-padding: 10 20;");
         submitButton.setOnAction(e -> sendAnswer());
 
-        // Лейбл для отображения результата
+        // Результат
         resultLabel = new Label();
         resultLabel.setFont(Font.font("Arial", 14));
         resultLabel.setStyle("-fx-text-fill: #0000AA;");
-        resultLabel.setVisible(false); // Скрываем по умолчанию
+        resultLabel.setVisible(false);
 
-        // Добавляем элементы в корневой контейнер
-        root.getChildren().addAll(questionLabel, scoreLabel, timerLabel, progressBar, answerField, submitButton, resultLabel);
+        // ImageView для отображения человечка
+        characterView = new ImageView();
+        characterView.setFitWidth(100);
+        characterView.setFitHeight(100);
+        characterView.setPreserveRatio(true);
 
-        // Создаем сцену и настраиваем Stage
-        Scene scene = new Scene(root, 500, 350);
+        // Контейнер для человечка
+        HBox characterContainer = new HBox();
+        characterContainer.setStyle("-fx-alignment: bottom-right;");
+        characterContainer.getChildren().add(characterView);
+
+        root.getChildren().addAll(questionLabel, scoreLabel, timerLabel, progressBar, answerField, submitButton, resultLabel, characterContainer);
+
+        Scene scene = new Scene(root, 550, 450); // Увеличили высоту для человечка
         primaryStage.setTitle("Player 1");
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // Подключаемся к серверу
         new Thread(this::connectToServer).start();
     }
 
@@ -95,8 +107,9 @@ public class QuizClient2 extends Application {
                     String question = message.substring(9);
                     Platform.runLater(() -> {
                         questionLabel.setText(question);
-                        progressBar.setProgress(0); // Сброс прогресс-бара при новом вопросе
+                        progressBar.setProgress(0);
 
+                        characterView.setImage(new Image(getClass().getResourceAsStream("/static/gif/walk.gif")));
                     });
                 } else if (message.startsWith("SCORE_UPDATE:")) {
                     String scoreUpdate = message.substring(13);
@@ -108,14 +121,17 @@ public class QuizClient2 extends Application {
                     String result = message.substring(7);
                     Platform.runLater(() -> {
                         resultLabel.setText(result);
-                        resultLabel.setVisible(true); // Показываем результат
+                        resultLabel.setVisible(true);
                     });
                 } else if (message.startsWith("PROGRESS:")) {
                     String timeLeft = message.substring(9);
                     Platform.runLater(() -> {
                         double progress = Double.parseDouble(timeLeft) / 10000 * 1.16; // 8 секунд - общее время
-                        System.out.println(progress);
                         progressBar.setProgress(progress);
+                    });
+                } else if (message.equals("STOP")) {
+                    Platform.runLater(() -> {
+                        characterView.setImage(new Image(getClass().getResourceAsStream("/static/img/stand.png")));
                     });
                 }
             }

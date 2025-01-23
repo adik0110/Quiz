@@ -19,8 +19,6 @@ public class QuizServer {
     private static int currentQuestionIndex = 0;
     private static int player1Score = 0;
     private static int player2Score = 0;
-    private static volatile boolean player1Answered = false;
-    private static volatile boolean player2Answered = false;
     private static volatile String player1Answer = null;
     private static volatile String player2Answer = null;
 
@@ -40,8 +38,6 @@ public class QuizServer {
 
                 while (currentQuestionIndex < QUESTIONS.length) {
                     String question = QUESTIONS[currentQuestionIndex];
-                    player1Answered = false;
-                    player2Answered = false;
                     player1Answer = null;
                     player2Answer = null;
 
@@ -69,7 +65,6 @@ public class QuizServer {
                         // Проверяем ответ от первого игрока
                         if (in.ready()) {
                             player1Answer = in.readLine();
-                            player1Answered = true;
 
                             if (player1Answer != null && player1Answer.equalsIgnoreCase(ANSWERS[currentQuestionIndex])) {
                                 player1Score++;
@@ -86,7 +81,6 @@ public class QuizServer {
                         // Проверяем ответ от второго игрока
                         if (opponentIn.ready()) {
                             player2Answer = opponentIn.readLine();
-                            player2Answered = true;
 
                             if (player2Answer != null && player2Answer.equalsIgnoreCase(ANSWERS[currentQuestionIndex])) {
                                 player2Score++;
@@ -100,15 +94,16 @@ public class QuizServer {
                             }
                         }
 
-                        // Добавляем небольшую задержку, чтобы не нагружать процессор
+                        // Добавляем небольшую задержку
                         try {
                             Thread.sleep(100);
-                            System.out.println((currentTime - startTime));
-                            out.println("PROGRESS:" + (currentTime - startTime));
-                            opponentOut.println("PROGRESS:" + (currentTime - startTime));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+
+                        System.out.println((currentTime - startTime));
+                        out.println("PROGRESS:" + (currentTime - startTime));
+                        opponentOut.println("PROGRESS:" + (currentTime - startTime));
                     }
 
                     // Если время вышло и никто не ответил правильно
