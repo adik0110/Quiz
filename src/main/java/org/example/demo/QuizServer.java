@@ -73,6 +73,8 @@ public class QuizServer {
 
                             if (player1Answer != null && player1Answer.equalsIgnoreCase(ANSWERS[currentQuestionIndex])) {
                                 player1Score++;
+                                out.println("STOP");
+                                opponentOut.println("STOP");
                                 out.println("RESULT:Correct! You earned a point!");
                                 opponentOut.println("RESULT:Player 1 answered correctly!");
                                 questionEnded = true; // Завершаем вопрос
@@ -88,24 +90,22 @@ public class QuizServer {
 
                             if (player2Answer != null && player2Answer.equalsIgnoreCase(ANSWERS[currentQuestionIndex])) {
                                 player2Score++;
+                                out.println("STOP");
+                                opponentOut.println("STOP");
                                 opponentOut.println("RESULT:Correct! You earned a point!");
                                 out.println("RESULT:Player 2 answered correctly!");
                                 questionEnded = true; // Завершаем вопрос
                             } else {
                                 opponentOut.println("RESULT:Incorrect!");
-                                // Ждем 1 секунду перед повторным выводом вопроса
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                opponentOut.println("QUESTION:" + question); // Повторно отправляем вопрос
                             }
                         }
 
                         // Добавляем небольшую задержку, чтобы не нагружать процессор
                         try {
                             Thread.sleep(100);
+                            System.out.println((currentTime - startTime));
+                            out.println("PROGRESS:" + (currentTime - startTime));
+                            opponentOut.println("PROGRESS:" + (currentTime - startTime));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -115,6 +115,8 @@ public class QuizServer {
                     if (!questionEnded) {
                         out.println("TIMER:0");
                         opponentOut.println("TIMER:0");
+                        out.println("STOP");
+                        opponentOut.println("STOP");
                         out.println("RESULT:Time's up! No one answered correctly.");
                         opponentOut.println("RESULT:Time's up! No one answered correctly.");
                     }

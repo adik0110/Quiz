@@ -5,12 +5,16 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class QuizClient2 extends Application {
@@ -22,7 +26,8 @@ public class QuizClient2 extends Application {
     private Label scoreLabel;
     private Label timerLabel;
     private TextField answerField;
-    private Label resultLabel; // Новый Label для результата
+    private Label resultLabel;
+    private ProgressBar progressBar; // Прогресс-бар для отображения времени
 
     @Override
     public void start(Stage primaryStage) {
@@ -40,9 +45,14 @@ public class QuizClient2 extends Application {
         scoreLabel.setStyle("-fx-text-fill: #555555;");
 
         // Таймер
-        timerLabel = new Label("Time left: 15");
+        timerLabel = new Label("Time left: 8");
         timerLabel.setFont(Font.font("Arial", 16));
         timerLabel.setStyle("-fx-text-fill: #555555;");
+
+        // Прогресс-бар
+        progressBar = new ProgressBar(0); // Инициализация прогресс-бара
+        progressBar.setPrefWidth(400); // Ширина прогресс-бара
+        progressBar.setStyle("-fx-accent: #4CAF50;"); // Цвет заполнения
 
         // Поле для ответа
         answerField = new TextField();
@@ -61,7 +71,7 @@ public class QuizClient2 extends Application {
         resultLabel.setVisible(false); // Скрываем по умолчанию
 
         // Добавляем элементы в корневой контейнер
-        root.getChildren().addAll(questionLabel, scoreLabel, timerLabel, answerField, submitButton, resultLabel);
+        root.getChildren().addAll(questionLabel, scoreLabel, timerLabel, progressBar, answerField, submitButton, resultLabel);
 
         // Создаем сцену и настраиваем Stage
         Scene scene = new Scene(root, 500, 350);
@@ -83,7 +93,11 @@ public class QuizClient2 extends Application {
             while ((message = in.readLine()) != null) {
                 if (message.startsWith("QUESTION:")) {
                     String question = message.substring(9);
-                    Platform.runLater(() -> questionLabel.setText(question));
+                    Platform.runLater(() -> {
+                        questionLabel.setText(question);
+                        progressBar.setProgress(0); // Сброс прогресс-бара при новом вопросе
+
+                    });
                 } else if (message.startsWith("SCORE_UPDATE:")) {
                     String scoreUpdate = message.substring(13);
                     Platform.runLater(() -> scoreLabel.setText("Score: " + scoreUpdate));
@@ -95,6 +109,13 @@ public class QuizClient2 extends Application {
                     Platform.runLater(() -> {
                         resultLabel.setText(result);
                         resultLabel.setVisible(true); // Показываем результат
+                    });
+                } else if (message.startsWith("PROGRESS:")) {
+                    String timeLeft = message.substring(9);
+                    Platform.runLater(() -> {
+                        double progress = Double.parseDouble(timeLeft) / 10000 * 1.16; // 8 секунд - общее время
+                        System.out.println(progress);
+                        progressBar.setProgress(progress);
                     });
                 }
             }
