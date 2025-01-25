@@ -179,7 +179,6 @@ public class QuizClient extends Application {
                     String scoreUpdate = message.substring(13);
                     Platform.runLater(() -> {
                         scoreLabel.setText("Счет: " + scoreUpdate);
-                        progressBar.setProgress(Double.parseDouble(scoreUpdate) / TOTAL_QUESTIONS);
                     });
                 } else if (message.startsWith("TIMER:")) {
                     String timeLeft = message.substring(6);
