@@ -6,12 +6,12 @@ import java.net.Socket;
 
 public class QuizServer {
     private static final String[] QUESTIONS = {
-            "What is the capital of France?",
-            "What is 2 + 2?",
-            "What is the color of the sky?",
-            "Which programming language is this game written in?"
+            "Какая столица Франции?",
+            "Сколько будет 2 + 2?",
+            "Какого цвета небо?",
+            "На каком языке программирования написано это приложение?"
     };
-    private static final String[] ANSWERS = {"Paris", "4", "Blue", "Java"};
+    private static final String[] ANSWERS = {"Париж", "4", "Голубое", "Java"};
 
     private static int currentQuestionIndex = 0;
     private static int player1Score = 0;
@@ -27,40 +27,33 @@ public class QuizServer {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is running on port " + PORT);
 
-            // Ожидаем подключения первого игрока
             Socket clientSocket = serverSocket.accept();
             System.out.println("Player 1 connected");
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
-            // Запрашиваем имя первого игрока
             out.println("ENTER_NAME");
             player1Name = in.readLine();
             System.out.println("Player 1 name: " + player1Name);
             out.println("WAITING_FOR_PLAYER_2");
 
-            // Ожидаем подключения второго игрока
             Socket opponentSocket = serverSocket.accept();
             System.out.println("Player 2 connected");
             BufferedReader opponentIn = new BufferedReader(new InputStreamReader(opponentSocket.getInputStream()));
             PrintWriter opponentOut = new PrintWriter(opponentSocket.getOutputStream(), true);
 
-            // Запрашиваем имя второго игрока
             opponentOut.println("ENTER_NAME");
             player2Name = opponentIn.readLine();
             System.out.println("Player 2 name: " + player2Name);
 
-            // Уведомляем обоих игроков о начале игры
             out.println("START_GAME");
             opponentOut.println("START_GAME");
 
-            // Основной игровой цикл
             while (currentQuestionIndex < QUESTIONS.length) {
                 String question = QUESTIONS[currentQuestionIndex];
                 player1Answer = null;
                 player2Answer = null;
 
-                // Отправляем вопрос обоим игрокам
                 out.println("QUESTION:" + question);
                 opponentOut.println("QUESTION:" + question);
                 out.println("RESULT:" + " ");
@@ -74,14 +67,12 @@ public class QuizServer {
                     long currentTime = System.currentTimeMillis();
                     long timeLeft = 8 - (currentTime - startTime) / 1000;
 
-                    // Обновляем таймер только раз в секунду
                     if (currentTime - lastTimerUpdate >= 1000) {
                         out.println("TIMER:" + timeLeft);
                         opponentOut.println("TIMER:" + timeLeft);
                         lastTimerUpdate = currentTime;
                     }
 
-                    // Проверяем ответ от первого игрока
                     if (in.ready()) {
                         player1Answer = in.readLine();
 
@@ -97,7 +88,6 @@ public class QuizServer {
                         }
                     }
 
-                    // Проверяем ответ от второго игрока
                     if (opponentIn.ready()) {
                         player2Answer = opponentIn.readLine();
 
@@ -113,7 +103,6 @@ public class QuizServer {
                         }
                     }
 
-                    // Добавляем небольшую задержку
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -125,7 +114,6 @@ public class QuizServer {
                     opponentOut.println("PROGRESS:" + (currentTime - startTime));
                 }
 
-                // Если время вышло и никто не ответил правильно
                 if (!questionEnded) {
                     out.println("TIMER:0");
                     opponentOut.println("TIMER:0");
@@ -135,13 +123,11 @@ public class QuizServer {
                     opponentOut.println("RESULT:Время вышло! Никто не ответил правильно.");
                 }
 
-                // Обновляем счет
                 out.println("SCORE_UPDATE:" + player1Score);
                 opponentOut.println("SCORE_UPDATE:" + player2Score);
 
-                // Пауза перед следующим вопросом
                 try {
-                    Thread.sleep(3000); // Ждем 3 секунды
+                    Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -149,12 +135,10 @@ public class QuizServer {
                 currentQuestionIndex++;
             }
 
-            // Отправка финального результата
             String finalScores = "FINAL_SCORE:" + player1Score + "," + player2Score + "," + player1Name + "," + player2Name;
             out.println(finalScores);
             opponentOut.println(finalScores);
 
-            // Отправка текстового результата
             if (player1Score > player2Score) {
                 out.println("RESULT:Вы выиграли!");
                 opponentOut.println("RESULT:Вы проиграли!");
