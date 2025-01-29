@@ -39,6 +39,9 @@ public class QuizClient extends Application {
     private Button submitButton;
     private Label namePromptLabel;
 
+    private VBox themeSelectionBox;
+    private String selectedTheme = "";
+
     private int player1Score = 0;
     private int player2Score = 0;
     private String player1Name = "";
@@ -57,13 +60,62 @@ public class QuizClient extends Application {
         nameField.setPromptText("Имя");
         nameField.setStyle("-fx-font-size: 14; -fx-padding: 10;");
 
-        startButton = new Button("Начать игру");
+        startButton = new Button("Далее");
         startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14; -fx-padding: 10 20;");
-        startButton.setOnAction(e -> startGame());
+        startButton.setOnAction(e -> showThemeSelection());
 
         root.getChildren().addAll(namePromptLabel, nameField, startButton);
 
-        questionLabel = new Label("Ждем 2 игрока");
+        Scene scene = new Scene(root, 550, 450);
+        primaryStage.setTitle("Игра-квиз");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private void showThemeSelection() {
+        playerName = nameField.getText().trim();
+
+        if (playerName.isEmpty()) {
+            showAlert("Ошибка", "Имя не может быть пустым", "Пожалуйста, введите ваше имя.");
+            return;
+        }
+
+        root.getChildren().clear();
+
+        Label themeLabel = new Label("Выберите тему квиза:");
+        themeLabel.setFont(Font.font("Arial", 18));
+        themeLabel.setStyle("-fx-text-fill: #333333;");
+
+        Button animalsButton = new Button("Животные");
+        Button weatherButton = new Button("Погода");
+        Button itButton = new Button("IT");
+        Button emotionsButton = new Button("Эмоции");
+
+        setThemeButtonStyle(animalsButton);
+        setThemeButtonStyle(weatherButton);
+        setThemeButtonStyle(itButton);
+        setThemeButtonStyle(emotionsButton);
+
+        animalsButton.setOnAction(e -> startGame("Животные"));
+        weatherButton.setOnAction(e -> startGame("Погода"));
+        itButton.setOnAction(e -> startGame("IT"));
+        emotionsButton.setOnAction(e -> startGame("Эмоции"));
+
+        themeSelectionBox = new VBox(15, themeLabel, animalsButton, weatherButton, itButton, emotionsButton);
+        themeSelectionBox.setStyle("-fx-alignment: center;");
+        root.getChildren().add(themeSelectionBox);
+    }
+
+    private void setThemeButtonStyle(Button button) {
+        button.setStyle("-fx-background-color: #008CBA; -fx-text-fill: white; -fx-font-size: 14; -fx-padding: 10 20;");
+        button.setPrefWidth(200);
+    }
+
+    private void startGame(String theme) {
+        selectedTheme = theme;
+        root.getChildren().clear();
+
+        questionLabel = new Label("Ожидание второго игрока...");
         questionLabel.setFont(Font.font("Arial", 18));
         questionLabel.setStyle("-fx-text-fill: #333333;");
 
@@ -88,7 +140,7 @@ public class QuizClient extends Application {
         answerField.setPromptText("Введите ответ");
         answerField.setStyle("-fx-font-size: 14; -fx-padding: 10;");
 
-        submitButton = new Button("Отправить");
+        Button submitButton = new Button("Отправить");
         submitButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14; -fx-padding: 10 20;");
         submitButton.setOnAction(e -> sendAnswer());
 
@@ -96,26 +148,6 @@ public class QuizClient extends Application {
         resultLabel.setFont(Font.font("Arial", 14));
         resultLabel.setStyle("-fx-text-fill: #0000AA;");
         resultLabel.setVisible(false);
-
-        Scene scene = new Scene(root, 550, 450);
-        primaryStage.setTitle("Игра-квиз");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
-
-    private void startGame() {
-        playerName = nameField.getText().trim();
-
-        if (playerName.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Ошибка");
-            alert.setHeaderText("Имя не может быть пустым");
-            alert.setContentText("Пожалуйста, введите ваше имя.");
-            alert.showAndWait();
-            return;
-        }
-
-        root.getChildren().removeAll(namePromptLabel, nameField, startButton);
 
         root.getChildren().addAll(questionLabel, scoreLabel, timerLabel, stickmanImageView, progressBar, answerField, submitButton, resultLabel);
 
@@ -258,6 +290,14 @@ public class QuizClient extends Application {
             out.println(answer);
             answerField.clear();
         }
+    }
+
+    private void showAlert(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     public static void main(String[] args) {
