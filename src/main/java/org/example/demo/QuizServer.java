@@ -1,18 +1,18 @@
 package org.example.demo;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class QuizServer {
-    private static final String[] QUESTIONS = {
-            "Какая столица Франции?",
-            "Сколько будет 2 + 2?",
-            "Какого цвета небо?",
-            "На каком языке программирования написано это приложение?"
-    };
-    private static final String[] ANSWERS = {"Париж", "4", "Голубое", "Java"};
-
+    private static final int PORT = 12345;
+    private static Map<String, List<Question>> questionsByCategory;
     private static int currentQuestionIndex = 0;
     private static int player1Score = 0;
     private static int player2Score = 0;
@@ -21,9 +21,11 @@ public class QuizServer {
     private static volatile String player1Name = null;
     private static volatile String player2Name = null;
 
-    private static final int PORT = 12345;
+    private static String selectedCategory = "";
 
     public static void main(String[] args) {
+        loadQuestions();
+
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is running on port " + PORT);
 
@@ -32,8 +34,15 @@ public class QuizServer {
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
-            out.println("ENTER_NAME");
-            player1Name = in.readLine();
+            String player1In = in.readLine();
+
+            if (player1In.split(" ").length > 1) {
+                player1Name = player1In.split(" ")[0];
+                selectedCategory = player1In.split(" ")[1];
+            } else {
+                player1Name = player1In;
+            }
+
             System.out.println("Player 1 name: " + player1Name);
             out.println("WAITING_FOR_PLAYER_2");
 
@@ -42,20 +51,31 @@ public class QuizServer {
             BufferedReader opponentIn = new BufferedReader(new InputStreamReader(opponentSocket.getInputStream()));
             PrintWriter opponentOut = new PrintWriter(opponentSocket.getOutputStream(), true);
 
-            opponentOut.println("ENTER_NAME");
-            player2Name = opponentIn.readLine();
+            String player2In = opponentIn.readLine();
+
+            System.out.println(player2In);
+
+            if (player2In.split(" ").length > 1) {
+                player2Name = player2In.split(" ")[0];
+                selectedCategory = player2In.split(" ")[1];
+            } else {
+                player2Name = player2In;
+            }
+
             System.out.println("Player 2 name: " + player2Name);
+
+            List<Question> questions = questionsByCategory.get(selectedCategory);
 
             out.println("START_GAME");
             opponentOut.println("START_GAME");
 
-            while (currentQuestionIndex < QUESTIONS.length) {
-                String question = QUESTIONS[currentQuestionIndex];
+            while (currentQuestionIndex < questions.size()) {
+                Question question = questions.get(currentQuestionIndex);
                 player1Answer = null;
                 player2Answer = null;
 
-                out.println("QUESTION:" + question);
-                opponentOut.println("QUESTION:" + question);
+                out.println("QUESTION:" + question.getQuestion());
+                opponentOut.println("QUESTION:" + question.getQuestion());
                 out.println("RESULT:" + " ");
                 opponentOut.println("RESULT:" + " ");
 
@@ -76,13 +96,13 @@ public class QuizServer {
                     if (in.ready()) {
                         player1Answer = in.readLine();
 
-                        if (player1Answer != null && player1Answer.equalsIgnoreCase(ANSWERS[currentQuestionIndex])) {
+                        if (player1Answer != null && player1Answer.equalsIgnoreCase(question.getAnswer())) {
                             player1Score++;
                             out.println("STOP");
                             opponentOut.println("STOP");
                             out.println("RESULT:Правильно! Вы зарабатываете очко!");
                             opponentOut.println("RESULT:" + player1Name + " ответил правильно!");
-                            questionEnded = true; // Завершаем вопрос
+                            questionEnded = true;
                         } else {
                             out.println("RESULT:Неверный ответ!");
                         }
@@ -91,13 +111,13 @@ public class QuizServer {
                     if (opponentIn.ready()) {
                         player2Answer = opponentIn.readLine();
 
-                        if (player2Answer != null && player2Answer.equalsIgnoreCase(ANSWERS[currentQuestionIndex])) {
+                        if (player2Answer != null && player2Answer.equalsIgnoreCase(question.getAnswer())) {
                             player2Score++;
                             out.println("STOP");
                             opponentOut.println("STOP");
                             opponentOut.println("RESULT:Правильно! Вы зарабатываете очко!");
                             out.println("RESULT:" + player2Name + " ответил правильно!");
-                            questionEnded = true; // Завершаем вопрос
+                            questionEnded = true;
                         } else {
                             opponentOut.println("RESULT:Неверный ответ!");
                         }
@@ -109,7 +129,6 @@ public class QuizServer {
                         e.printStackTrace();
                     }
 
-                    System.out.println((currentTime - startTime));
                     out.println("PROGRESS:" + (currentTime - startTime));
                     opponentOut.println("PROGRESS:" + (currentTime - startTime));
                 }
@@ -152,6 +171,29 @@ public class QuizServer {
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void loadQuestions() {
+        String path = QuizServer.class.getClassLoader().getResource("questions.json").getPath();
+        try (Reader reader = new FileReader(path)) {
+            Gson gson = new Gson();
+            questionsByCategory = gson.fromJson(reader, new TypeToken<Map<String, List<Question>>>() {}.getType());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static class Question {
+        private String question;
+        private String answer;
+
+        public String getQuestion() {
+            return question;
+        }
+
+        public String getAnswer() {
+            return answer;
         }
     }
 }

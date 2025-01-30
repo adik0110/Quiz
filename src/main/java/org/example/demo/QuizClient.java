@@ -115,6 +115,8 @@ public class QuizClient extends Application {
         selectedTheme = theme;
         root.getChildren().clear();
 
+        System.out.println(selectedTheme);
+
         questionLabel = new Label("Ожидание второго игрока...");
         questionLabel.setFont(Font.font("Arial", 18));
         questionLabel.setStyle("-fx-text-fill: #333333;");
@@ -160,7 +162,7 @@ public class QuizClient extends Application {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            out.println(playerName);
+            out.println(playerName + " " + selectedTheme);
 
             String message = in.readLine();
             if (message.equals("WAITING_FOR_PLAYER_2")) {
